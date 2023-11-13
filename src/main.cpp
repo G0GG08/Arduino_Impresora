@@ -18,7 +18,8 @@ void imprimir(Request &req, Response &res) {
   DeserializationError err = deserializeJson(doc, req);
   if (err) {
     res.set("Content-Type", "application/json");
-    res.print("{\"status\": \"error\", \"message\": err.c_str()}");
+    String error = "{\"status\": \"error\", \"message\": " + String(err.c_str()) + "}";
+    res.print(error);
     return res.status(400);
   }
 
