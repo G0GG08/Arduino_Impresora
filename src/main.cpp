@@ -15,40 +15,45 @@ void index(Request &req, Response &res) {
 }
 
 void imprimir(Request &req, Response &res) {
-  deserializeJson(doc, req);
+  DeserializationError err = deserializeJson(doc, req);
+  if (err) {
+    res.set("Content-Type", "application/json");
+    res.print("{\"status\": \"error\", \"message\": err.c_str()}");
+    return res.status(400);
+  }
 
   String titulo = doc["titulo"];
   if (titulo == "") {
     res.set("Content-Type", "application/json");
-    res.print("{\"status\": \"error\"}");
+    res.print("{\"status\": \"error\", \"message\": \"titulo is required\"}");
     return res.status(400);
   }
 
   String producto = doc["producto"];
   if (producto == "") {
     res.set("Content-Type", "application/json");
-    res.print("{\"status\": \"error\"}");
+    res.print("{\"status\": \"error\", \"message\": \"producto is required\"}");
     return res.status(400);
   }
 
   String lote = doc["lote"];
   if (lote == "") {
     res.set("Content-Type", "application/json");
-    res.print("{\"status\": \"error\"}");
+    res.print("{\"status\": \"error\", \"message\": \"lote is required\"}");
     return res.status(400);
   }
 
   String peso = doc["peso"];
   if (peso == "") {
     res.set("Content-Type", "application/json");
-    res.print("{\"status\": \"error\"}");
+    res.print("{\"status\": \"error\", \"message\": \"peso is required\"}");
     return res.status(400);
   }
 
   String etiqueta = doc["etiqueta"];
   if (etiqueta == "") {
     res.set("Content-Type", "application/json");
-    res.print("{\"status\": \"error\"}");
+    res.print("{\"status\": \"error\", \"message\": \"etiqueta is required\"}");
     return res.status(400);
   }
 
