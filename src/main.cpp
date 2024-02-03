@@ -2,90 +2,120 @@
 #include <ArduinoJson.h>
 #include <aWOT.h>
 
-#define WIFI_SSID "LAPTOP-IV84MQ3J"
-#define WIFI_PASSWORD "pega2022"
+//#define WIFI_SSID "Red-Operaciones"
+//#define WIFI_PASSWORD "P3g4dur0"
   
+#define WIFI_SSID "LAPTOP-0S7H8CRD 2665"
+#define WIFI_PASSWORD "pegaduro"
+
 WiFiServer server(80);
 Application app;
 
+//IPAddress ip(192,168,137,39);
+//IPAddress subnet(255,255,255,0);
+
 DynamicJsonDocument doc(2048);
-  
+String color;
+String orden;
+char buffer[1000];
+
 void index(Request &req, Response &res) {
   res.print("Hello World!");
 }
 
 void imprimir(Request &req, Response &res) {
-  DeserializationError err = deserializeJson(doc, req);
-  if (err) {
-    res.set("Content-Type", "application/json");
-    String error = "{\"status\": \"error\", \"message\": " + String(err.c_str()) + "}";
-    res.print(error);
-    return res.status(400);
+  deserializeJson(doc, req);
+  //-------------------------------------------------ALMACENA BUFFER PRODUCTO----------------------------------------------------//
+  String producto = doc["Color"];
+  if (producto != "null"){
+    color=producto;
   }
-
-  String titulo = doc["titulo"];
-  if (titulo == "") {
-    res.set("Content-Type", "application/json");
-    res.print("{\"status\": \"error\", \"message\": \"titulo is required\"}");
-    return res.status(400);
-  }
-
-  String producto = doc["producto"];
   if (producto == "") {
     res.set("Content-Type", "application/json");
-    res.print("{\"status\": \"error\", \"message\": \"producto is required\"}");
+    res.print("{\"status\": \"error\"}");
     return res.status(400);
   }
-
-  String lote = doc["lote"];
+  int lenProducto=color.length() +1;
+  char bufProducto[lenProducto];
+  color.toCharArray(bufProducto,lenProducto);
+  //----------------------------------------------------ALMACENA BUFFER LOTE----------------------------------------------------//
+  String lote = doc["Lote"];
+  if (lote != "null"){
+    orden=lote;
+  }
   if (lote == "") {
     res.set("Content-Type", "application/json");
-    res.print("{\"status\": \"error\", \"message\": \"lote is required\"}");
+    res.print("{\"status\": \"error\"}");
     return res.status(400);
   }
-
+  int lenLote=orden.length() +1;
+  char bufLote[lenLote];
+  orden.toCharArray(bufLote,lenLote);
+  //-----------------------------------------------------ALMACENA BUFFER PESO---------------------------------------------------//
   String peso = doc["peso"];
   if (peso == "") {
     res.set("Content-Type", "application/json");
-    res.print("{\"status\": \"error\", \"message\": \"peso is required\"}");
+    res.print("{\"status\": \"error\"}");
     return res.status(400);
   }
-
-  String etiqueta = doc["etiqueta"];
-  if (etiqueta == "") {
-    res.set("Content-Type", "application/json");
-    res.print("{\"status\": \"error\", \"message\": \"etiqueta is required\"}");
-    return res.status(400);
-  }
-
+  int lenPeso=peso.length() +1;
+  char bufPeso[lenPeso];
+  peso.toCharArray(bufPeso,lenPeso);
+  
+  // ---------------------------------------------------JUNTAR MENSAJE PARA IMPRIMIR-----------------------------------------------//
+  sprintf(buffer,"*\r\n%s\r\n%s\r\n",bufProducto,bufLote);
   serializeJson(doc, Serial);
-
+  Serial.println("");
+  Serial.println(buffer);
+  Serial1.print(buffer);
   res.set("Content-Type", "application/json");
-  res.print("{\"status\": \"ok\"}");
-
+  res.println("{\"status\": \"ok\"}");
+  
   return res.status(201);
+}
+
+void CLIENTE() {
+  WiFiClient client = server.available();
+  if (client.connected()){
+    app.process(&client);
+    client.stop();
+  }
+}
+
+void CONECTAR() {
+    delay(500);
+    WiFiDrv::analogWrite(25, 100);
+    WiFiDrv::analogWrite(26, 0);
+    WiFiDrv::analogWrite(27, 0);
+    Serial.print(".");
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 }
   
 void setup() {
-  Serial.begin(115200);
-  
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println(WiFi.localIP());
 
+  Serial.begin(9600);
+  Serial1.begin(9600);
+  WiFiDrv::pinMode(25, OUTPUT); //define green pin
+  WiFiDrv::pinMode(26, OUTPUT); //define red pin
+  WiFiDrv::pinMode(27, OUTPUT); //define blue pin
   app.get("/", &index);
   app.post("/", &imprimir);
   server.begin();
 }
   
-void loop() {  
-  WiFiClient client = server.available();
+void loop() { 
   
-  if (client.connected()) {
-    app.process(&client);
-    client.stop();
+  if (WiFi.status() == WL_CONNECTED) {
+    WiFiDrv::analogWrite(25, 0);
+    WiFiDrv::analogWrite(26, 0);
+    WiFiDrv::analogWrite(27, 100);
+   // Serial.print(WiFi.status());
+    CLIENTE();
+  }else{
+    WiFiDrv::analogWrite(25, 0);
+    WiFiDrv::analogWrite(26, 100);
+    WiFiDrv::analogWrite(27, 0);
+    CONECTAR();
   }
 }
+
