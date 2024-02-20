@@ -14,16 +14,20 @@
 
 WiFiServer server(80);
 Application app;
-;
-JSONVar myObject;
-String jsonData;
-Uart mySerial (&sercom3, 1, 0, SERCOM_RX_PAD_1, UART_TX_PAD_0);
 IPAddress ip(192,168,137,39);
 IPAddress subnet(255,255,255,0);
-int impresora = 2;
+
+JSONVar myObject;
 DynamicJsonDocument doc(2048);
+String jsonData;
+
+Uart mySerial (&sercom3, 1, 0, SERCOM_RX_PAD_1, UART_TX_PAD_0);
+
 String color;
 String orden;
+String titulo;
+
+int impresora = 2;
 const unsigned int MAX_MESSAGE_LENGTH = 100;
 char bufferDatosImpresora1[1000];
 char bufferPesoImpresora1[1000];
@@ -33,7 +37,7 @@ char bufLote[MAX_MESSAGE_LENGTH];
 char bufPeso[MAX_MESSAGE_LENGTH];
 char mensaje[MAX_MESSAGE_LENGTH];
 char weight[MAX_MESSAGE_LENGTH];
-char titulo[MAX_MESSAGE_LENGTH];
+char bufTitulo[MAX_MESSAGE_LENGTH];
 
 void index(Request &req, Response &res) {
   res.print("Hello World!");
@@ -43,41 +47,33 @@ void imprimir(Request &req, Response &res) {
   deserializeJson(doc, req);
   //-------------------------------------------------ALMACENA BUFFER PRODUCTO----------------------------------------------------//
   String producto = doc["Color"];
+  //se almacena el producto configurado, para su posterior impresion
   if (producto != "null"){
     color=producto;
   }
-  if (producto == "") {
-    res.set("Content-Type", "application/json");
-    res.print("{\"status\": \"error\"}");
-    return res.status(400);
-  }
+  response(producto,res);
+
   int lenProducto=color.length() +1;
-  //char bufProducto[lenProducto];
+  //Gestiona el titulo de la etiqueta acorde al producto seleccionado
   if(producto=="Cemento"){
     titulo="CEMENTO";
+  }else{
+    titulo="BOLSITA DE COLOR";
   }
+  titulo.toCharArray(bufTitulo,100);
   color.toCharArray(bufProducto,lenProducto);
-  
   //----------------------------------------------------ALMACENA BUFFER LOTE----------------------------------------------------//
   String lote = doc["Lote"];
+  // se almacena el lote configurado, para su posterior impresion
   if (lote != "null"){
     orden=lote;
   }
-  if (lote == "") {
-    res.set("Content-Type", "application/json");
-    res.print("{\"status\": \"error\"}");
-    return res.status(400);
-  }
+  response(lote,res);
   int lenLote=orden.length() +1;
-  //char bufLote[lenLote];
   orden.toCharArray(bufLote,lenLote);
   //-----------------------------------------------------ALMACENA BUFFER PESO---------------------------------------------------//
   String peso = doc["peso"];
-  if (peso == "") {
-    res.set("Content-Type", "application/json");
-    res.print("{\"status\": \"error\"}");
-    return res.status(400);
-  }
+  response(peso,res);
   int lenPeso=peso.length() +1;
   //char bufPeso[lenPeso];
   peso.toCharArray(bufPeso,lenPeso);
@@ -97,22 +93,32 @@ void imprimir(Request &req, Response &res) {
       Serial1.print(bufferDatosImpresora1);
     }
   }else{
-    if (peso != "null"){
-      sprintf(bufferMensajeImpresora2,"SIZE 2.29,1.61\rGAP 0\rDIRECTION 1,0\rREFERENCE 0,0\rOFFSET 0\rSET PEEL ON\rSET CUTTER 1\r@LABEL=2\rCLS\rTEXT 40,30,\"2\",0,1,1,\"%s\"\rTEXT 280,30,\"1\",0,1,1,FORMAT$(NOW,\"dd/mm/yy hh:nn AM/PM\")\rBAR 20,60,420,3\rTEXT 40,75,\"D.FNT\",0,1,1,\"PRODUCTO:\"\rTEXT 280,75,\"2\",0,1,1,\"%s\"\rTEXT 40,105,\"D.FNT\",0,1,1,\"CONSECUTIVO:\"\rTEXT 280,105,\"2\",0,1,1,@LABEL\rTEXT 40,135,\"D.FNT\",0,1,1,\"LOTE:\"\rTEXT 280,135,\"2\",0,1,1,\"%s\"\rTEXT 40,185,\"2\",0,1,1,\"PESO (KG):\"\rTEXT 40,235,\"5.EFT\",0,1,1,\"%s\"\rPUTBMP 740,165, \"Logo.bmp\",1,60\rPRINT 1\rEND\r\n",titulo,bufProducto,bufLote,bufPeso);
+    if (peso != "null"){//si llega el peso desde el configurador, imprime la secuencia completa del formato de la etiqueta
+      sprintf(bufferMensajeImpresora2,"CLS\rTEXT 40,30,\"2\",0,1,1,\"%s\"\rTEXT 280,30,\"1\",0,1,1,FORMAT$(NOW,\"dd/mm/yy hh:nn AM/PM\")\rBAR 20,60,420,3\rTEXT 40,75,\"D.FNT\",0,1,1,\"PRODUCTO:\"\rTEXT 280,75,\"2\",0,1,1,\"%s\"\rTEXT 40,105,\"D.FNT\",0,1,1,\"CONSECUTIVO:\"\rTEXT 280,105,\"2\",0,1,1,@LABEL\rTEXT 40,135,\"D.FNT\",0,1,1,\"LOTE:\"\rTEXT 280,135,\"2\",0,1,1,\"%s\"\rTEXT 40,185,\"2\",0,1,1,\"PESO (KG):\"\rTEXT 40,235,\"5.EFT\",0,1,1,\"%s\"\rPUTBMP 740,165, \"Logo.bmp\",1,60\rPRINT 1\rEND\r\n",bufTitulo,bufProducto,bufLote,bufPeso);
+      Serial.println(bufferMensajeImpresora2);
+      Serial1.print(bufferMensajeImpresora2);
+    }else{// si llega el producto o el lote, solo envía las configuraciones de los margenes de la etiqueta y resetea el contador de etiquetas
+      sprintf(bufferMensajeImpresora2,"SIZE 2.29,1.61\rGAP 0\rDIRECTION 1,0\rREFERENCE 0,0\rOFFSET 0\rSET PEEL ON\rSET CUTTER 1\r@LABEL=1\r\n");
       Serial.println(bufferMensajeImpresora2);
       Serial1.print(bufferMensajeImpresora2);
     }
   }
-  
 
-  //Serial1.print(bufferDatos);
   res.set("Content-Type", "application/json");
   res.println("{\"status\": \"ok\"}");
   
   return res.status(201);
 }
 
-void CLIENTE() {
+void response(String key,Response &res){
+  if (key==""){
+    res.set("Content-Type", "application/json");
+    res.print("{\"status\": \"error\"}");
+    return res.status(400);
+  }
+}
+
+void cliente() {
   WiFiClient client = server.available();
   if (client.connected()){
     app.process(&client);
@@ -120,7 +126,7 @@ void CLIENTE() {
   }
 }
 
-void CONECTAR() {
+void conectar() {
     delay(500);
     WiFiDrv::analogWrite(25, 100);
     WiFiDrv::analogWrite(26, 0);
@@ -153,12 +159,12 @@ void loop() {
     WiFiDrv::analogWrite(26, 0);
     WiFiDrv::analogWrite(27, 100);
    // Serial.print(WiFi.status());
-    CLIENTE();
+    cliente();
   }else{
     WiFiDrv::analogWrite(25, 0);
     WiFiDrv::analogWrite(26, 100);
     WiFiDrv::analogWrite(27, 0);
-    CONECTAR();
+    conectar();
   }
   while (mySerial.available()) {
   
@@ -184,7 +190,7 @@ void loop() {
     }else{
       sscanf(mensaje,"Weight: %s",&weight);
       Serial.println(weight);
-      sprintf(bufferMensajeImpresora2,"SIZE 2.29,1.61\rGAP 0\rDIRECTION 1,0\rREFERENCE 0,0\rOFFSET 0\rSET PEEL ON\rSET CUTTER 1\r@LABEL=2\rCLS\rTEXT 40,30,\"2\",0,1,1,\"%s\"\rTEXT 280,30,\"1\",0,1,1,FORMAT$(NOW,\"dd/mm/yy hh:nn AM/PM\")\rBAR 20,60,420,3\rTEXT 40,75,\"D.FNT\",0,1,1,\"PRODUCTO:\"\rTEXT 280,75,\"2\",0,1,1,\"%s\"\rTEXT 40,105,\"D.FNT\",0,1,1,\"CONSECUTIVO:\"\rTEXT 280,105,\"2\",0,1,1,@LABEL\rTEXT 40,135,\"D.FNT\",0,1,1,\"LOTE:\"\rTEXT 280,135,\"2\",0,1,1,\"%s\"\rTEXT 40,185,\"2\",0,1,1,\"PESO (KG):\"\rTEXT 40,235,\"5.EFT\",0,1,1,\"%s\"\rPUTBMP 740,165, \"Logo.bmp\",1,60\rPRINT 1\rEND\r\n",titulo,bufProducto,bufLote,weight);
+      sprintf(bufferMensajeImpresora2,"CLS\rTEXT 40,30,\"2\",0,1,1,\"%s\"\rTEXT 280,30,\"1\",0,1,1,FORMAT$(NOW,\"dd/mm/yy hh:nn AM/PM\")\rBAR 20,60,420,3\rTEXT 40,75,\"D.FNT\",0,1,1,\"PRODUCTO:\"\rTEXT 280,75,\"2\",0,1,1,\"%s\"\rTEXT 40,105,\"D.FNT\",0,1,1,\"CONSECUTIVO:\"\rTEXT 280,105,\"2\",0,1,1,@LABEL\rTEXT 40,135,\"D.FNT\",0,1,1,\"LOTE:\"\rTEXT 280,135,\"2\",0,1,1,\"%s\"\rTEXT 40,185,\"2\",0,1,1,\"PESO (KG):\"\rTEXT 40,235,\"5.EFT\",0,1,1,\"%s\"\rPUTBMP 740,165, \"Logo.bmp\",1,60\rPRINT 1\rEND\r\n",bufTitulo,bufProducto,bufLote,weight);
       Serial1.print(bufferMensajeImpresora2);
       Serial.println(bufferMensajeImpresora2);
     }
