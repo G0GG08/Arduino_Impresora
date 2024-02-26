@@ -136,7 +136,6 @@ void conectar() {
 }
   
 void setup() {
-
   Serial.begin(9600);
   Serial1.begin(9600);
   mySerial.begin(9600);
@@ -153,7 +152,6 @@ void setup() {
 }
   
 void loop() { 
-  
   if (WiFi.status() == WL_CONNECTED) {
     WiFiDrv::analogWrite(25, 0);
     WiFiDrv::analogWrite(26, 0);
@@ -167,45 +165,36 @@ void loop() {
     conectar();
   }
   while (mySerial.available()) {
-  
-  static unsigned int posMensaje = 0;
-  char arrCharByte = mySerial.read();
-  // gestionar si hay llegado mensaje por el serial
-  if ( arrCharByte != '\n' && (posMensaje < MAX_MESSAGE_LENGTH - 1) ){
-    //en cada ciclo, acumula caracter por caracter hasta terminal el mensaje
-    mensaje[posMensaje] = arrCharByte;
-    posMensaje++;
-  }else{
-    // si ya se acumuló todo el mensaje, se guarda en un json, y se imprime el mensaje recibido
-    mensaje[posMensaje] = '\0';
-    //imprime el mensaje recibido
-    Serial.print("Mensaje Recibido: ");
-    Serial.println(mensaje);
-    Serial.println();
-    // se resetea la variable donde se guarda el mensaje para acumular otro nuevo
-    posMensaje = 0;
-
-    if (impresora==1){
-      Serial1.print(mensaje);
+    static unsigned int posMensaje = 0;
+    char arrCharByte = mySerial.read();
+    // gestionar si hay llegado mensaje por el serial
+    if ( arrCharByte != '\n' && (posMensaje < MAX_MESSAGE_LENGTH - 1) ){
+      //en cada ciclo, acumula caracter por caracter hasta terminal el mensaje
+      mensaje[posMensaje] = arrCharByte;
+      posMensaje++;
     }else{
-      sscanf(mensaje,"Weight: %s",&weight);
-      Serial.println(weight);
-      sprintf(bufferMensajeImpresora2,"CLS\rTEXT 40,30,\"2\",0,1,1,\"%s\"\rTEXT 280,30,\"1\",0,1,1,FORMAT$(NOW,\"dd/mm/yy hh:nn AM/PM\")\rBAR 20,60,420,3\rTEXT 40,75,\"D.FNT\",0,1,1,\"PRODUCTO:\"\rTEXT 280,75,\"2\",0,1,1,\"%s\"\rTEXT 40,105,\"D.FNT\",0,1,1,\"CONSECUTIVO:\"\rTEXT 280,105,\"2\",0,1,1,@LABEL\rTEXT 40,135,\"D.FNT\",0,1,1,\"LOTE:\"\rTEXT 280,135,\"2\",0,1,1,\"%s\"\rTEXT 40,185,\"2\",0,1,1,\"PESO (KG):\"\rTEXT 40,235,\"5.EFT\",0,1,1,\"%s\"\rPUTBMP 740,165, \"Logo.bmp\",1,60\rPRINT 1\rEND\r\n",bufTitulo,bufProducto,bufLote,weight);
-      Serial1.print(bufferMensajeImpresora2);
-      Serial.println(bufferMensajeImpresora2);
+      // si ya se acumuló todo el mensaje, se guarda en un json, y se imprime el mensaje recibido
+      mensaje[posMensaje] = '\0';
+      //imprime el mensaje recibido
+      Serial.print("Mensaje Recibido: ");
+      Serial.println(mensaje);
+      Serial.println();
+      // se resetea la variable donde se guarda el mensaje para acumular otro nuevo
+      posMensaje = 0;
+      if (impresora==1){
+        Serial1.print(mensaje);
+      }else{
+        sscanf(mensaje,"Weight: %s",&weight);
+        Serial.println(weight);
+        sprintf(bufferMensajeImpresora2,"CLS\rTEXT 40,30,\"2\",0,1,1,\"%s\"\rTEXT 280,30,\"1\",0,1,1,FORMAT$(NOW,\"dd/mm/yy hh:nn AM/PM\")\rBAR 20,60,420,3\rTEXT 40,75,\"D.FNT\",0,1,1,\"PRODUCTO:\"\rTEXT 280,75,\"2\",0,1,1,\"%s\"\rTEXT 40,105,\"D.FNT\",0,1,1,\"CONSECUTIVO:\"\rTEXT 280,105,\"2\",0,1,1,@LABEL\rTEXT 40,135,\"D.FNT\",0,1,1,\"LOTE:\"\rTEXT 280,135,\"2\",0,1,1,\"%s\"\rTEXT 40,185,\"2\",0,1,1,\"PESO (KG):\"\rTEXT 40,235,\"5.EFT\",0,1,1,\"%s\"\rPUTBMP 740,165, \"Logo.bmp\",1,60\rPRINT 1\rEND\r\n",bufTitulo,bufProducto,bufLote,weight);
+        Serial1.print(bufferMensajeImpresora2);
+        Serial.println(bufferMensajeImpresora2);
+      }
     }
-    
-    
-  }
-  
-
-}
-  
+  } 
 }
 
 // Attach the interrupt handler to the SERCOM
-void SERCOM3_Handler()
-{
-
+void SERCOM3_Handler(){
   mySerial.IrqHandler();
 }
