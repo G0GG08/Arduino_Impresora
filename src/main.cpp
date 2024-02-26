@@ -62,7 +62,7 @@ void imprimir(Request &req, Response &res) {
   }
   titulo.toCharArray(bufTitulo,100);
   color.toCharArray(bufProducto,lenProducto);
-  //----------------------------------------------------ALMACENA BUFFER LOTE----------------------------------------------------//
+  //----------------------------------------------------ALMACENA BUFFER LOTE-----------------------------------------------------//
   String lote = doc["Lote"];
   // se almacena el lote configurado, para su posterior impresion
   if (lote != "null"){
@@ -71,13 +71,13 @@ void imprimir(Request &req, Response &res) {
   response(lote,res);
   int lenLote=orden.length() +1;
   orden.toCharArray(bufLote,lenLote);
-  //-----------------------------------------------------ALMACENA BUFFER PESO---------------------------------------------------//
+  //-----------------------------------------------------ALMACENA BUFFER PESO----------------------------------------------------//
   String peso = doc["peso"];
   response(peso,res);
   int lenPeso=peso.length() +1;
   //char bufPeso[lenPeso];
   peso.toCharArray(bufPeso,lenPeso);
-  // ---------------------------------------------------JUNTAR MENSAJE PARA IMPRIMIR-----------------------------------------------//
+  // ---------------------------------------------------JUNTAR MENSAJE PARA IMPRIMIR---------------------------------------------//
   sprintf(bufferDatosImpresora1,"*\r\n%s\r\n%s\r\n",bufProducto,bufLote);
   sprintf(bufferPesoImpresora1,"%s\r\n",bufPeso);
   
@@ -114,7 +114,7 @@ void response(String key,Response &res){
   if (key==""){
     res.set("Content-Type", "application/json");
     res.print("{\"status\": \"error\"}");
-    return res.status(400);
+    res.status(400);
   }
 }
 
