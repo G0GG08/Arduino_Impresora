@@ -14,7 +14,7 @@
 
 WiFiServer server(80);
 Application app;
-IPAddress ip(192,168,137,39);
+IPAddress ip(192,168,0,201);
 IPAddress subnet(255,255,255,0);
 
 JSONVar myObject;
@@ -122,7 +122,7 @@ void response(String key,Response &res){
     res.status(400);
   }
 }
-
+// Se establece la conexión con el cliente
 void cliente() {
   WiFiClient client = server.available();
   if (client.connected()){
@@ -130,7 +130,7 @@ void cliente() {
     client.stop();
   }
 }
-
+// Se establece la conexión con la red wifi
 void conectar() {
     delay(500);
     WiFiDrv::analogWrite(25, 100);
