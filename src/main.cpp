@@ -94,7 +94,7 @@ void imprimir(Request &req, Response &res) {
     }
   }else{
     if (peso != "null"){//si llega el peso desde el configurador, imprime la secuencia completa del formato de la etiqueta
-      //--Secuencia de mensaje para el formato de impresión--
+      //---------------------------------Secuencia de mensaje para el formato de impresión----------------------------------------//
       //"CLS\rTEXT 40,30,\"2\",0,1,1,\"%s\"\rTEXT 280,30,\"1\",0,1,1,FORMAT$(NOW,\"dd/mm/yy hh:nn AM/PM\")\rBAR 20,60,420,3\rTEXT 40,75,\"D.FNT\",0,1,1,\"PRODUCTO:\"\r
       //TEXT 280,75,\"2\",0,1,1,\"%s\"\rTEXT 40,105,\"D.FNT\",0,1,1,\"CONSECUTIVO:\"\rTEXT 280,105,\"2\",0,1,1,@LABEL\rTEXT 40,135,\"D.FNT\",0,1,1,\"LOTE:\"\r
       //TEXT 280,135,\"2\",0,1,1,\"%s\"\rTEXT 40,185,\"2\",0,1,1,\"PESO (KG):\"\rTEXT 40,235,\"5.EFT\",0,1,1,\"%s\"\rPUTBMP 740,165, \"Logo.bmp\",1,60\rPRINT 1\rEND\r\n",bufTitulo,bufProducto,bufLote,bufPeso
